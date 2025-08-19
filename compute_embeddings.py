@@ -8,6 +8,8 @@ from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.manifold import MDS, TSNE 
 from umap import UMAP
+from sklearn.manifold import Isomap, LocallyLinearEmbedding
+from sklearn.decomposition import PCA
 
 from scipy.spatial.distance import pdist,squareform
 
@@ -55,6 +57,28 @@ class DimensionReducer():
         Y = np.random.uniform(0, 1, (self.X.shape[0], 2))
         return Y
     
+    def compute_Isomap(self):
+        """
+        Compute Isomap embedding on the dataset.
+        """
+        Y = Isomap(n_components=2, metric='precomputed', n_neighbors=15).fit_transform(self.D)
+        return Y
+
+    def compute_LLE(self):
+        """
+        Compute Locally Linear Embedding (LLE) on the dataset.
+        precomputed distance matrix is not used
+        LLE only works with Euclidean distances
+        """
+        Y = LocallyLinearEmbedding(n_components=2).fit_transform(self.X)
+        return Y
+
+    def compute_PCA(self):
+        """
+        Compute PCA (Principal Component Analysis) on the dataset.
+        """
+        Y = PCA(n_components=2).fit_transform(self.X)
+        return Y
 
 def save_embeddings(data, name, i, folder):
     """
@@ -75,15 +99,18 @@ if __name__ == "__main__":
     """
     Main function to compute and save embeddings for all datasets in the 'datasets' directory.
     """
+    EMBEDDINGS_FOLDER = "embeddings"
+
+
     import os
-    if not os.path.isdir("embeddings"):
-        os.mkdir('embeddings')
+    if not os.path.isdir(EMBEDDINGS_FOLDER):
+        os.mkdir(EMBEDDINGS_FOLDER)
 
     datasets = os.listdir('datasets')
     # datasets = ['epileptic.npy']
     
     num_iter = 10
-    num_algs = 4
+    num_algs = 7
     with tqdm.tqdm(total=len(datasets) * num_iter * num_algs) as pbar:
 
         for datasetStr in datasets:
@@ -94,17 +121,29 @@ if __name__ == "__main__":
 
             for i in range(num_iter):
                 random = DR.compute_random()
-                np.save(f"embeddings/{dname}_RANDOM_{i}.npy",random)                                    
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_RANDOM_{i}.npy",random)                                    
                 pbar.update(1)
 
                 umap = DR.compute_UMAP()
-                np.save(f"embeddings/{dname}_UMAP_{i}.npy",umap)
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_UMAP_{i}.npy",umap)
                 pbar.update(1)
 
                 tsne = DR.compute_TSNE()
-                np.save(f"embeddings/{dname}_TSNE_{i}.npy",tsne)
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_TSNE_{i}.npy",tsne)
                 pbar.update(1)
 
                 mds = DR.compute_MDS()
-                np.save(f"embeddings/{dname}_MDS_{i}.npy",mds)
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_MDS_{i}.npy",mds)
+                pbar.update(1)
+
+                lle = DR.compute_LLE()
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_LLE_{i}.npy",lle)                                    
+                pbar.update(1)
+
+                pca = DR.compute_PCA()
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_PCA_{i}.npy",pca)
+                pbar.update(1)
+
+                isomap = DR.compute_Isomap()
+                np.save(f"{EMBEDDINGS_FOLDER}/{dname}_Isomap_{i}.npy",isomap)
                 pbar.update(1)
