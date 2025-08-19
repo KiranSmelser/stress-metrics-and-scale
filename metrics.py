@@ -78,6 +78,19 @@ class Metrics():
         stressScore = stress.measure(self.X,alpha * self.Y,(self.dX, alpha * self.dY))
         return stressScore['stress']
 
+    def compute_fs_normalized_stress(self):
+        """
+        Compute Forced Scale Normalized Stress (Normalize dataset and embeddings before
+        computing normalized stress.)
+        """
+        dX = self.dX / np.max(self.dX)
+        dY = self.dY / np.max(self.dY)
+        
+        numerator = np.sum(np.square(dX - dY))
+        denominator = np.sum(np.square(dX))
+        return np.sqrt(numerator / denominator)
+
+
     def compute_scale_normalized_stress(self,return_alpha=False):
         """
         Compute scale-normalized stress between pairwise distances of X and Y.
@@ -217,7 +230,7 @@ class Metrics():
 
         return kl_divergence
     
-    def _get_Q(self, is_batch: bool, scale: 1, similarity='t'):
+    def _get_Q(self, is_batch: bool, scale: int = 1, similarity='t'):
         """
         Calculate the low dimensional probability distribution corresponding to Y
         Parameters
