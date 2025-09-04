@@ -9,7 +9,7 @@ import tqdm
 
 from metrics import Metrics
 
-ALGORITHMS = ["MDS", "TSNE", "RANDOM"]
+ALGORITHMS = ["ISOMAP", "LLE", "PCA", "MDS", "UMAP", "TSNE", "RANDOM"]
 RUN_IDX = 0
 K = 46  # number of perturbation levels
 MAX_SHUFFLE_FRAC = 0.90
