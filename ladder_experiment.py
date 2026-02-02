@@ -9,11 +9,11 @@ import tqdm
 
 from metrics import Metrics
 
-ALGORITHMS = ["MDS", "TSNE", "RANDOM"]
+ALGORITHMS = ["Isomap", "LLE", "PCA", "MDS", "UMAP", "TSNE", "RANDOM"]
 RUN_IDX = 0
 K = 46  # number of perturbation levels
 MAX_SHUFFLE_FRAC = 0.90
-RESULTS_JSON = os.path.join("R1", "ladder_results.json")
+RESULTS_JSON = "ladder_results.json"
 RNG_SEED = 1337
 
 # Log-uniform scale range
@@ -60,8 +60,6 @@ def _sample_shared_alpha(rng: np.random.Generator) -> float:
 
 
 def run_experiment() -> Dict[str, Any]:
-    os.makedirs("R1", exist_ok=True)
-
     rng = np.random.default_rng(RNG_SEED)
 
     datasets_dir = "datasets"
