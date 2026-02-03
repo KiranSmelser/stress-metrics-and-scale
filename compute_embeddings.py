@@ -31,7 +31,7 @@ class DimensionReducer():
         """
         Compute MDS (Multidimensional Scaling) on the dataset.
         """
-        Y = MDS(dissimilarity="precomputed").fit_transform(self.D)
+        Y = MDS(metric="precomputed", init='random', n_init=4).fit_transform(self.D)
         return Y
 
     def compute_TSNE(self):
