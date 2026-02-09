@@ -2,6 +2,7 @@
 import numpy as np
 import json
 import os
+from pathlib import Path
 import tqdm
 from scipy.optimize import minimize_scalar
 import matplotlib.pyplot as plt
@@ -53,6 +54,7 @@ def compute_stress_metrics(scale_by_ten=True):
                     )
                     datasetResults[f"{alg}_kruskal"] = M.compute_kruskal_stress()
                     datasetResults[f"{alg}_sheppard"] = M.compute_shepard_correlation()
+                    datasetResults[f"{alg}_fsnorm"] = M.compute_fs_normalized_stress()
 
                     pbar.update(1)
 
@@ -105,6 +107,75 @@ def test_curve():
             # with open("out10x.json", 'w') as fdata:
             #     json.dump(results,fdata,indent=4)
 
+def compute_curves(
+    target_dir: str | Path,
+    metric: str,
+    n_runs=10,
+):
+    if not isinstance(target_dir, Path):
+        target_dir = Path(target_dir)
+    target_dir.mkdir(exist_ok=True)
+
+    datasets = os.listdir("datasets")
+    algorithms = ['TSNE', 'UMAP', 'MDS', 'RANDOM']
+
+    normal_scales = np.linspace(0, 30, 350)
+    scales_2k = np.linspace(0, 2000, 350)
+    scales_300 = np.linspace(0, 2000, 350)
+
+    def get_scales(dataset_name, metric):
+        if metric == "KL":
+            if dataset_name in ["epileptic", "spambase", "s-curve", "swissroll"]:
+                return scales_300
+        elif metric == "NS":
+            if dataset_name in ["auto-mpg", "penguins", "wine"]:
+                return scales_2k
+        return normal_scales
+
+    # Computation loop
+    with tqdm.tqdm(total=len(datasets), position=0, desc="Dataset:") as dset_pbar:
+        for datasetStr in datasets:
+            datasetName = datasetStr.replace(".npy", "")
+
+            X = np.load(f"datasets/{datasetName}.npy")
+            labels = np.load(f"dataset_labels/{datasetName}.npy")
+            # Trim labels to match number of samples in X (and Y)
+            labels = labels[: X.shape[0]]
+
+            scales = get_scales(datasetName, metric)
+
+            dset_pbar.set_postfix_str(f"Dataset: {datasetName}")
+            with tqdm.tqdm(total=n_runs, position=1, leave=False, desc="Run") as run_pbar:
+                for run in range(n_runs):
+                    run_pbar.set_postfix_str(f"{run}")
+                    with tqdm.tqdm(
+                        total=len(algorithms),
+                        position=2,
+                        leave=False,
+                        desc="Alg"
+                    ) as alg_pbar:
+                        for alg in algorithms:
+                            alg_pbar.set_postfix_str(alg)
+                            Y = np.load(f"embeddings/{datasetName}_{alg}_{run}.npy")
+
+                            if metric == "KL":
+                                y_values = _compute_kl_divergences_in_chunks(
+                                    X, Y, scales, perplexity=30
+                                )
+                            elif metric == "NS":
+                                M = Metrics(X, Y, setbatch=False)
+                                y_values = np.array([M.compute_normalized_stress(alpha=alpha) for alpha in scales])
+
+                            # Save
+                            save_dir = target_dir / datasetName / str(run) / alg / metric
+                            save_dir.mkdir(exist_ok=True, parents=True)
+                            np.save(save_dir / "scales.npy", scales)
+                            np.save(save_dir / "values.npy", y_values)
+                                
+
+                            alg_pbar.update(1)
+                    run_pbar.update(1)                        
+            dset_pbar.update(1)
 
 def graph_kl(
     scales,
@@ -821,6 +892,8 @@ if __name__ == "__main__":
     normal_scales_kl_csv = "gaussian_kl_at_1_and_10.csv"
     normal_FSKL_csv = "gaussian_fskl.csv"
 
+    curve_coords_dir = "curve_coords"
+
     log_kl_at_infty(
         perplexity=30, target_dir=csv_dir, target_csv_file=kl_at_infty_csv, n_runs=10
     )
@@ -850,3 +923,6 @@ if __name__ == "__main__":
         plot_min_kl=True,
         min_kl_data_filepath=csv_dir + "/" + min_kl_csv,
     )
+
+    compute_curves(curve_coords_dir, "NS")
+    compute_curves(curve_coords_dir, "KL")
