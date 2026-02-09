@@ -40,8 +40,8 @@ The code in this repository was written using Python version 3.12 and utilizes t
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/username/repo-name.git
-cd repo-name
+git clone https://github.com/KiranSmelser/stress-metrics-and-scale.git
+cd stress-metrics-and-scale
 python3.12 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
